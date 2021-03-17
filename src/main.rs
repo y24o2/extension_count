@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::ffi::OsString;
 use std::env;
 
+mod ec_options;
 
 fn list_file_extension(dir: &Path, recursion: bool, ignore_case: bool) -> HashMap<OsString, u32>{
     let mut res: HashMap<OsString, u32> = HashMap::new();
@@ -37,30 +38,15 @@ fn list_file_extension(dir: &Path, recursion: bool, ignore_case: bool) -> HashMa
             }
         }
     }
+
     res
 }
 
 fn main() {
-    let mut options = Options::default();
-    for arg in env::args(){
-        if arg == "-h" || arg == "--help" {eprintln!("Usage ..."); std::process::exit(0)}
-        else if arg == "-r" || arg == "--recursion" {options.recursion = true}
-        else if arg == "-i" || arg == "-c" || arg == "--caseinsensitive" {options.ignore_case = true}
-        else if arg == "-n" || arg == "--ranked" {options.ranked = true}
-        else if arg.starts_with("--min="){options.min = arg[6..arg.len()].parse::<u32>().unwrap_or(1)}
-        else if arg.starts_with("--path="){options.path = String::from(&arg[7..arg.len()])}
-        else if arg.starts_with("min="){options.min = arg[4..arg.len()].parse::<u32>().unwrap_or(1)}
-        else if arg.starts_with("path="){options.path = String::from(&arg[5..arg.len()])}
-        else if arg.starts_with("-") && !arg.starts_with("--"){
-            if arg.contains("r") {options.recursion = true}
-            if arg.contains("i") || arg.contains("c") {options.ignore_case = true}
-            if arg.contains("n") {options.ranked = true}
-        }
-    }
-    
+    let options = ec_options::Options::from_args(env::args());   
     let res = list_file_extension(Path::new(&options.path), options.recursion, options.ignore_case);
-
     let mut keys:Vec<OsString> = Vec::new();
+
     for (k, v) in &res{
         if v >= &options.min { keys.push(OsString::from(k.to_str().unwrap())) };
     }
@@ -81,26 +67,6 @@ fn main() {
     else{
         for k in keys{
             println!("{}: {}", &k.to_str().unwrap(), &res.get(&k).unwrap());
-        }
-    }
-}
-
-struct Options{
-    path:String,
-    recursion:bool,
-    min:u32,
-    ranked:bool,
-    ignore_case:bool,
-}
-
-impl Options{
-    fn default() -> Options{
-        Options{
-            path: String::from("."),
-            recursion: false,
-            min: 1,
-            ranked: false,
-            ignore_case:false,
         }
     }
 }
