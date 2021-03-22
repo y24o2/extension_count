@@ -5,6 +5,7 @@ use std::ffi::OsString;
 use std::env;
 
 mod ec_options;
+use ec_options::{Format, Options};
 
 fn list_file_extension(dir: &Path, recursion: bool, ignore_case: bool) -> HashMap<OsString, u32>{
     let mut res: HashMap<OsString, u32> = HashMap::new();
@@ -42,31 +43,51 @@ fn list_file_extension(dir: &Path, recursion: bool, ignore_case: bool) -> HashMa
     res
 }
 
-fn main() {
-    let options = ec_options::Options::from_args(env::args());   
-    let res = list_file_extension(Path::new(&options.path), options.recursion, options.ignore_case);
-    let mut keys:Vec<OsString> = Vec::new();
 
-    for (k, v) in &res{
+fn out(res:&HashMap<OsString, u32>, options: Options){
+    let mut keys:Vec<OsString> = Vec::new();
+    let mut map = HashMap::<String, u32>::new();
+    for (k, v) in res{
         if v >= &options.min { keys.push(OsString::from(k.to_str().unwrap())) };
     }
     keys.sort();
     if options.ranked{
         let mut nums:Vec<u32> = Vec::new();
-        for (_, v) in &res{
+        for (_, v) in res{
             if v >= &options.min && !nums.contains(v) { nums.push(*v) };
         }
         nums.sort();
         nums.reverse();
         for n in nums{
-            for (k, v) in &res{
-                if n == *v {println!("{}: {}", &k.to_str().unwrap(), *v);}
+            for (k, v) in res{
+                if n == *v {
+                    match options.format{
+                        Format::Text => {println!("{}: {}", &k.to_str().unwrap(), *v);},
+                        Format::Json | Format::PrettyJson => {map.insert(String::from(k.to_str().unwrap()), *v);},
+                    }
+                }
             }
         }
     }
     else{
         for k in keys{
-            println!("{}: {}", &k.to_str().unwrap(), &res.get(&k).unwrap());
+            match options.format{
+                Format::Text => {println!("{}: {}", &k.to_str().unwrap(), res.get(&k).unwrap());},
+                Format::Json | Format::PrettyJson => {map.insert(String::from(k.to_str().unwrap()), *res.get(&k).unwrap());},
+            }
         }
     }
+    match options.format{
+        Format::Json => {println!("{}", serde_json::to_string(&map).unwrap())},
+        Format::PrettyJson => {println!("{}", serde_json::to_string_pretty(&map).unwrap())},
+        _ => {},
+    }
+
+}
+
+
+fn main() {
+    let options = Options::from_args(env::args());   
+    let res = list_file_extension(Path::new(&options.path), options.recursion, options.ignore_case);
+    out(&res, options);
 }

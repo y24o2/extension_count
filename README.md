@@ -27,6 +27,8 @@ option | description
 -h | show help message and exit
 -r | read subdirs
 -i or -c | case insensitiv
+-j | json (one line)
 -n | list extensions ordered by count
+--json | json (pretty)
 --min=1 | minimum amount (default = 1)
 --path="." | set path (default = ".")
