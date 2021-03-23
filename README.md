@@ -1,5 +1,5 @@
 # extension_count
-![made with rust](https://img.shields.io/badge/Built%20with-Rust-Purple)
+[![Rust](https://img.shields.io/badge/Built%20with-Rust-Purple)](https://www.rust-lang.org/)
 
 read directory, count and list file extensions
 
